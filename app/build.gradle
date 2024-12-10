@@ -1,0 +1,179 @@
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+    id 'kotlin-kapt'
+    id 'dagger.hilt.android.plugin'
+    id 'kotlin-parcelize'
+    id 'org.jetbrains.kotlin.android'
+    id 'com.google.gms.google-services'
+}
+
+def cprops = new Properties()
+cprops.load(new FileInputStream(file('config.properties')))
+def config = new ConfigSlurper().parse(cprops)
+
+android {
+    compileSdkVersion androidCompileSdkVersion
+    defaultConfig {
+        minSdkVersion androidMinSdkVersion
+        targetSdkVersion androidTargetSdkVersion
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        debug {
+            debuggable true
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        release {
+            debuggable false
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+        kotlinOptions {
+            jvmTarget = "1.8"
+        }
+    }
+    buildFeatures {
+//        compose true
+        viewBinding true
+        dataBinding true
+    }
+
+//    composeOptions {
+//        kotlinCompilerExtensionVersion composeVersion
+//    }
+
+    signingConfigs {
+        debug {
+            storeFile file("../keys/atech-keystore.jks")
+            storePassword "atech2021"
+            keyAlias "release"
+            keyPassword "atech2021"
+        }
+        release {
+            storeFile file("../keys/atech-keystore.jks")
+            storePassword "atech2021"
+            keyAlias "release"
+            keyPassword "atech2021"
+        }
+    }
+
+    buildTypes {
+        debug {
+            debuggable true
+            minifyEnabled false
+            shrinkResources false
+            signingConfig signingConfigs.debug
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        release {
+            debuggable false
+            minifyEnabled true
+            shrinkResources true
+            signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    flavorDimensions "env"
+    productFlavors {
+        development {
+            dimension "env"
+            applicationIdSuffix '.dev'
+            resValue "string", "app_name", "@string/app_name_dev"
+            buildConfigField("String", "API_BASE_URL", config.env.dev.baseurl)
+            buildConfigField("String", "API_MOCK_BASE_URL", config.env.dev.mockbaseurl)
+        }
+        staging {
+            dimension "env"
+            applicationIdSuffix '.staging'
+            resValue "string", "app_name", "@string/app_name_staging"
+            buildConfigField("String", "API_BASE_URL", config.env.staging.baseurl)
+        }
+        production {
+            dimension "env"
+            resValue "string", "app_name", "@string/app_name_prod"
+            buildConfigField("String", "API_BASE_URL", config.env.prod.baseurl)
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation kotlinStdLib
+
+    //network
+    implementation libs.retrofit
+    implementation libs.okhttp
+    implementation libs.gson
+    //androidx
+    implementation support.appcompat
+    implementation support.constraint
+    implementation support.recyclerview
+    implementation support.core
+    implementation support.design
+    implementation support.swiperefreshlayout
+//    implementation support.activityCompose
+
+    //compose
+//    implementation compose.ui
+//    implementation compose.tooling
+//    implementation compose.foundation
+//    implementation compose.runtime
+//    implementation compose.livedata
+//    implementation compose.rxjava
+//    implementation compose.material
+
+    //navigation
+    implementation support.navigationFragment
+    implementation support.navigationUi
+
+    //network
+    implementation libs.retrofit
+    implementation libs.okhttp
+    implementation libs.gson
+
+    implementation libs.glide
+
+    //rxjava
+    implementation libs.rxjava
+
+    //database
+    implementation support.room
+    kapt support.roomCompiler
+    implementation support.roomCommon
+    implementation support.roomRxJava
+
+    //hilt
+    implementation libs.hiltAndroid
+    kapt libs.hiltCompilerAndroid
+
+    //hilt livecycle vm
+    kapt libs.hiltCompilerLivecycleVM
+    implementation 'androidx.activity:activity-compose:1.5.0'
+    implementation 'androidx.fragment:fragment-ktx:1.5.0'
+
+    //firebase
+    implementation platform(firebase.bom)
+    implementation firebase.analyticsKtx
+}
+
+configurations.all {
+    resolutionStrategy.eachDependency { details ->
+        if (details.requested.group == "androidx.lifecycle") {
+            details.useVersion("2.5.1") // Replace with the desired version
+        }
+    }
+}
