@@ -170,7 +170,6 @@ class BleUtilsModule(reactContext: ReactApplicationContext) :
       override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
         if (newState == BluetoothProfile.STATE_CONNECTED) {
           sendEvent(DEVICE_CONNECTED)
-          promise.resolve("Connected to ${device.address}")
           gatt.discoverServices() // Start discovering services
         } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
           sendEvent(DEVICE_DISCONNECTED)
@@ -180,9 +179,46 @@ class BleUtilsModule(reactContext: ReactApplicationContext) :
 
       override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
         if (status == BluetoothGatt.GATT_SUCCESS) {
-          // TODO breakdown and get all services and send event
+          try {
+            val gattServices = gatt.services ?: listOf()
+
+            // Convert GATT services into an array
+            val servicesArray = Arguments.createArray()
+
+            for (service in gattServices) {
+              val serviceMap = Arguments.createMap()
+              serviceMap.putString("uuid", service.uuid.toString())
+
+              // Convert characteristics into an array
+              val characteristicsArray = Arguments.createArray()
+              for (characteristic in service.characteristics) {
+                val characteristicMap = Arguments.createMap()
+                characteristicMap.putString("uuid", characteristic.uuid.toString())
+                characteristicMap.putInt("properties", characteristic.properties)
+
+                // Convert descriptors into an array
+                val descriptorsArray = Arguments.createArray()
+                for (descriptor in characteristic.descriptors) {
+                  val descriptorMap = Arguments.createMap()
+                  descriptorMap.putString("uuid", descriptor.uuid.toString())
+                  descriptorsArray.pushMap(descriptorMap)
+                }
+                characteristicMap.putArray("descriptors", descriptorsArray)
+
+                characteristicsArray.pushMap(characteristicMap)
+              }
+
+              serviceMap.putArray("characteristics", characteristicsArray)
+              servicesArray.pushMap(serviceMap)
+            }
+
+            // Resolve the promise with the serialized array
+            promise.resolve(servicesArray)
+          } catch (e: Exception) {
+            promise.reject("ERROR_FETCHING_GATT_SERVICES", e)
+          }
         } else {
-          // TODO breakdown and get all services and send event
+          promise.resolve("Disconnected from ${device.address}")
         }
       }
     })

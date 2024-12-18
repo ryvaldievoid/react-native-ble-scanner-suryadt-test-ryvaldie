@@ -3,9 +3,8 @@ import { Text, View, StyleSheet, Button, FlatList, PermissionsAndroid, Alert, ty
 import BleUtils, {type DeviceData, BluetoothState } from 'react-native-ble-scanner-suryadt-test-ryvaldie';
 
 export default function App() {
-  const [bluetoothState, setBluetoothState] = useState<string>()
+  const [bluetoothState, setBluetoothState] = useState<string>();
   const [devices, setDevices] = useState<DeviceData[]>([]);
-  const [connectedDevice, setConnectedDevice] = useState<string>()
 
   const requestBluetoothPermission = async () => {
     try {
@@ -48,6 +47,7 @@ export default function App() {
       setBluetoothState(state);
       // handle state changes
       if (state === BluetoothState.SCANNING_STOP) {
+        // handle state changes
       }
     });
     // Listen for discovered devices
@@ -80,12 +80,26 @@ export default function App() {
 
   const connectToDevice = async (deviceAddress: string) => {
     try {
-      console.log(connectedDevice)
       const res = await BleUtils.connectToDevice(deviceAddress);
-      setConnectedDevice(res.split(" ")[2]);
+      let concatResponse = '';
+      if (typeof res === 'string') {
+        concatResponse = res;
+      } else {
+        res.forEach(service => {
+          concatResponse += 'Service UUID:' + service.uuid + '\n';
+          service.characteristics.forEach(characteristic => {
+            concatResponse += 'Characteristic UUID:' + characteristic.uuid + '\n';
+            concatResponse += 'Properties:' + characteristic.properties + '\n';
+            characteristic.descriptors.forEach(descriptor => {
+              concatResponse += 'Descriptor UUID:' + descriptor.uuid + '\n';
+            });
+          });
+        });
+      }
+
       Alert.alert(
-        'Connected Device',
-        res
+        'Device Details',
+        concatResponse
       );
     } catch (error) {
       console.log(error)
@@ -113,11 +127,7 @@ export default function App() {
         renderItem={({ item }) => (
           <TouchableOpacity
             onPress={() => {
-              if (connectedDevice === item.address) {
-                disconnectFromDevice();
-              } else {
-                connectToDevice(item.address);
-              }
+              connectToDevice(item.address);
             }}
             key={item.address}
             style={styles.itemContainer}>

@@ -5,7 +5,7 @@ interface BleUtilsModule {
   isBluetoothEnabled(): boolean;
   startScan(): Promise<null>;
   stopScan(): Promise<string>;
-  connectToDevice(deviceAddress: string): Promise<string>;
+  connectToDevice(deviceAddress: string): Promise<string | GattServices>;
   disconnectFromDevice(): void;
   getBluetoothState(): string;
   getDevices(): string;
@@ -19,17 +19,34 @@ export interface DeviceData {
   address: string;
 }
 
+export type GattServices = GattService[];
+
+export interface GattService {
+  uuid: string;
+  characteristics: Characteristic[];
+}
+
+export interface Characteristic {
+  uuid: string;
+  properties: number;
+  descriptors: Descriptor[];
+}
+
+export interface Descriptor {
+  uuid: string;
+}
+
 // State
 export enum BluetoothState {
-  BLUETOOTH_OFF = "BLUETOOTH_OFF",
-  BLUETOOTH_ON = "BLUETOOTH_ON",
-  PERMISSION_DENIED = "PERMISSION_DENIED",
-  PERMISSION_GRANTED = "PERMISSION_GRANTED",
-  SCANNING_STARTED = "SCANNING_STARTED",
-  SCANNING_STOP = "SCANNING_STOP",
-  ON_DEVICES_FOUND = "DEVICES_FOUND",
-  DEVICE_CONNECTED = "DEVICE_CONNECTED",
-  DEVICE_DISCONNECTED = "DEVICE_DISCONNECTED"
+  BLUETOOTH_OFF = 'BLUETOOTH_OFF',
+  BLUETOOTH_ON = 'BLUETOOTH_ON',
+  PERMISSION_DENIED = 'PERMISSION_DENIED',
+  PERMISSION_GRANTED = 'PERMISSION_GRANTED',
+  SCANNING_STARTED = 'SCANNING_STARTED',
+  SCANNING_STOP = 'SCANNING_STOP',
+  ON_DEVICES_FOUND = 'DEVICES_FOUND',
+  DEVICE_CONNECTED = 'DEVICE_CONNECTED',
+  DEVICE_DISCONNECTED = 'DEVICE_DISCONNECTED'
 }
 
 const { BleUtils } = NativeModules;
@@ -75,7 +92,7 @@ const BleUtilsWrapper = {
    * @param deviceAddress - The Bluetooth MAC address of the device to connect to.
    * @returns A promise that resolves to a success message or rejects on error.
    */
-  connectToDevice: async (deviceAddress: string): Promise<string> => {
+  connectToDevice: async (deviceAddress: string): Promise<string | GattServices> => {
     try {
       const result = await BleUtilsNative.connectToDevice(deviceAddress);
       return result;
