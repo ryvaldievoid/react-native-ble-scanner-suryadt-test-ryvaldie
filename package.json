@@ -1,6 +1,7 @@
 {
   "name": "react-native-ble-scanner-suryadt-test-ryvaldie",
   "version": "0.1.0",
+  "private": true,
   "description": "React native module that manages the functionality of searching for Bluetooth Low Energy (BLE) peripherals for android",
   "source": "./src/index.tsx",
   "main": "./lib/commonjs/index.js",
